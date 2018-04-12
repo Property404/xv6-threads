@@ -1,5 +1,6 @@
 #ifndef _USER_H_
 #define _USER_H_
+#define PGSIZE		4096		// bytes mapped by a page
 
 struct stat;
 
@@ -25,6 +26,7 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+int clone(void(*fcn)(void*), void*, void*);
 
 // user library functions (ulib.c)
 int stat(char*, struct stat*);

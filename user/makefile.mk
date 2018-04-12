@@ -1,6 +1,6 @@
-
 # user programs
 USER_PROGS := \
+	bigtest\
 	cat\
 	echo\
 	forktest\
@@ -17,6 +17,8 @@ USER_PROGS := \
 	usertests\
 	wc\
 	zombie
+
+include user/unitmake.mk
 
 USER_PROGS := $(addprefix user/, $(USER_PROGS))
 

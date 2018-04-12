@@ -1,0 +1,1 @@
+cd tools && ./mkbigtest.py && cd .. &&  make $1

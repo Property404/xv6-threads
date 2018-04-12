@@ -444,3 +444,55 @@ procdump(void)
 }
 
 
+int
+clone(void(*fcn)(void*), void *arg, void*stack)
+{
+  int i, pid;
+  struct proc *np;
+
+  // Allocate process.
+  // Kstack is allocated here
+  if((np = allocproc()) == 0)
+    return -1;
+
+  // Use same address space as parent
+  np->pgdir = proc->pgdir;
+
+  // Copying other parameters (left from fork())
+  np->sz = proc->sz;
+  np->parent = proc;
+  *np->tf = *proc->tf;
+
+  // Clear %eax so that fork returns 0 in the child.
+  np->tf->eax = 0;
+
+  // **New proc should start at specified function **/
+  np->tf->eip = (uint)fcn;
+
+  // **Set up new user stack**
+  //
+  // First, set the stack pointer to the given stack
+  np->tf->esp = (uint)stack;
+  // Then push the argument onto the stack
+  np->tf->esp-= 0x4;
+  *((void**)(np->tf->esp)) = arg;
+  // We have to basically do a manual "call" since that
+  // instruction won't be executed. We also have to push
+  // arguments onto the stack
+  // So, push a fake return address onto the stack lol
+  np->tf->esp-= 0x4;
+  *((uint*)(np->tf->esp)) = 0xffffffff;
+  // We shouldn't need to do anything wiht the base
+  // pointer, because fcn() should handle that...right?!
+
+
+  for(i = 0; i < NOFILE; i++)
+    if(proc->ofile[i])
+      np->ofile[i] = filedup(proc->ofile[i]);
+  np->cwd = idup(proc->cwd);
+ 
+  pid = np->pid;
+  np->state = RUNNABLE;
+  safestrcpy(np->name, proc->name, sizeof(proc->name));
+  return pid;
+}

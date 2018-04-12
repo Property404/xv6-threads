@@ -28,7 +28,7 @@ CFLAGS += -Wno-sign-compare -Wno-unused-parameter -Wno-deprecated-declarations -
 # treat warnings as errors
 CFLAGS += -Werror
 # Set standard
-CFLAGS += -std=gnu99
+CFLAGS += -std=gnu11
 # produce debugging information for use by gdb
 CFLAGS += -ggdb
 
@@ -57,7 +57,7 @@ OBJDUMP := objdump
 ################################################################################
 
 # If the makefile can't find QEMU, specify its path here
-#QEMU :=
+QEMU := qemu-system-i386
 
 # Try to infer the correct QEMU if not specified
 ifndef QEMU
@@ -95,7 +95,7 @@ QEMUOPTS := -hdb fs.img xv6.img -smp $(CPUS)
 include kernel/makefile.mk
 include user/makefile.mk
 include tools/makefile.mk
-DEPS := $(KERNEL_DEPS) $(USER_DEPS) $(TOOLS_DEPS)
+DEPS := $(KERNEL_DEPS) $(USER_DEPS) $(TOOLS_DEPS) 
 CLEAN := $(KERNEL_CLEAN) $(USER_CLEAN) $(TOOLS_CLEAN) \
 	fs fs.img .gdbinit .bochsrc dist
 
