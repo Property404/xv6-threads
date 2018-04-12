@@ -145,6 +145,8 @@ fork(void)
   np->parent = proc;
   *np->tf = *proc->tf;
 
+  np->is_thread = 0;
+
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
 
@@ -223,7 +225,10 @@ wait(void)
         pid = p->pid;
         kfree(p->kstack);
         p->kstack = 0;
-        freevm(p->pgdir);
+		if(! p->is_thread)
+		{
+			freevm(p->pgdir);
+		}
         p->state = UNUSED;
         p->pid = 0;
         p->parent = 0;
@@ -469,12 +474,12 @@ clone(void(*fcn)(void*), void *arg, void*stack)
   // **New proc should start at specified function **/
   np->tf->eip = (uint)fcn;
 
+  // Declare a thread
+  np->is_thread = 1;
+
   // **Set up new user stack**
-  //
-  // First, set the stack pointer to the given stack
-  np->tf->esp = (uint)stack;
+  np->tf->esp = (uint)stack+PGSIZE;
   // Then push the argument onto the stack
-  np->tf->esp-= 0x4;
   *((void**)(np->tf->esp)) = arg;
   // We have to basically do a manual "call" since that
   // instruction won't be executed. We also have to push
