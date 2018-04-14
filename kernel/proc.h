@@ -76,6 +76,7 @@ struct proc {
   char name[16];               // Process name (debugging)
 
   _Bool is_thread;
+  void* stack;
 };
 
 // Process memory is laid out contiguously, low addresses first:

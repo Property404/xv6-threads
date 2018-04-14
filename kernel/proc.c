@@ -448,12 +448,75 @@ procdump(void)
   }
 }
 
+int
+join()
+{
+	void** stack;
+	if(argptr(0, (void*)&stack, sizeof(stack) < 0))
+		return -1;
+	if((proc->sz-(uint)stack)< sizeof(void**))
+		return -1;
+	struct proc *p;
+	int havekids, pid;
+
+	acquire(&ptable.lock);
+	for(;;){
+		// Scan through table looking for zombie children.
+		havekids = 0;
+		for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+			if(p->parent != proc || !(p->is_thread))
+				continue;
+			havekids = 1;
+			*stack = p->stack;
+			if(p->state == ZOMBIE){
+				// Found one.
+				pid = p->pid;
+				kfree(p->kstack);
+				p->kstack = 0;
+				p->state = UNUSED;
+				p->pid = 0;
+				p->parent = 0;
+				p->name[0] = 0;
+				p->killed = 0;
+				release(&ptable.lock);
+				return pid;
+			}
+		}
+
+		// No point waiting if we don't have any children.
+		if(!havekids || proc->killed){
+			release(&ptable.lock);
+			return -1;
+		}
+
+		// Wait for children to exit.  (See wakeup1 call in proc_exit.)
+		sleep(proc, &ptable.lock);  //DOC: wait-sleep
+	}
+}
 
 int
-clone(void(*fcn)(void*), void *arg, void*stack)
+clone(void)
 {
   int i, pid;
   struct proc *np;
+
+  // Get arguments
+  void (*fcn)(void*);
+  void* arg;
+  void* stack;
+  if(argint(0, (int*)&fcn) < 0)
+	  return -1;
+  if(argint(1, (int*)&arg) < 0)
+	  return -1;
+  if(argint(2, (int*)&stack) < 0)
+	  return -1;
+
+  // Make sure stack's page aligned:
+  if(((uint)stack)%PGSIZE)
+	  return -1;
+  // And not passed program break
+  if((uint)stack + PGSIZE >= (uint) proc->sz)
+	  return -1;
 
   // Allocate process.
   // Kstack is allocated here
@@ -474,11 +537,12 @@ clone(void(*fcn)(void*), void *arg, void*stack)
   // **New proc should start at specified function **/
   np->tf->eip = (uint)fcn;
 
-  // Declare a thread
+  // Declare as a thread
   np->is_thread = 1;
 
   // **Set up new user stack**
-  np->tf->esp = (uint)stack+PGSIZE;
+  np->stack = stack;
+  np->tf->esp = (uint)stack+PGSIZE - 4;//this 4 necessary??
   // Then push the argument onto the stack
   *((void**)(np->tf->esp)) = arg;
   // We have to basically do a manual "call" since that
@@ -489,7 +553,8 @@ clone(void(*fcn)(void*), void *arg, void*stack)
   *((uint*)(np->tf->esp)) = 0xffffffff;
   // We shouldn't need to do anything wiht the base
   // pointer, because fcn() should handle that...right?!
-
+  // Or not...?
+  np->tf->ebp = np->tf->esp;
 
   for(i = 0; i < NOFILE; i++)
     if(proc->ofile[i])

@@ -12,18 +12,14 @@ sys_fork(void)
   return fork();
 }
 
+int sys_join(void)
+{
+	return join();
+}
+
 int sys_clone(void)
 {
-	void (*fcn)(void*);
-	void* arg;
-	void* stack;
-	if(argint(0, (int*)&fcn) < 0)
-		return -1;
-	if(argint(1, (int*)&arg) < 0)
-		return -1;
-	if(argint(2, (int*)&stack) < 0)
-		return -1;
-	return clone(fcn, arg, stack);
+	return clone();
 }
 
 int
