@@ -5,6 +5,7 @@
 #
 # Temporarily ignore
 user/tests/*
+user/.*
 
 # Dagan files
 *.pdf
