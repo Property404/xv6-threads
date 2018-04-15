@@ -25,6 +25,7 @@ USER_PROGS := $(addprefix user/, $(USER_PROGS))
 # user library files
 USER_LIBS := \
 	ulib.o\
+	threadlib.o\
 	usys.o\
 	printf.o\
 	umalloc.o

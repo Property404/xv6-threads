@@ -117,6 +117,16 @@ growproc(int n)
       return -1;
   }
   proc->sz = sz;
+  /* We also have to grow the children thread memories */
+  acquire(&ptable.lock);
+  for(struct proc* p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+	  if(p->parent == proc && p->is_thread == 1)
+		  p->sz = sz;
+  }
+  release(&ptable.lock);
+
+
   switchuvm(proc);
   return 0;
 }
@@ -217,7 +227,7 @@ wait(void)
     // Scan through table looking for zombie children.
     havekids = 0;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->parent != proc)
+      if(p->parent != proc || p->is_thread)
         continue;
       havekids = 1;
       if(p->state == ZOMBIE){

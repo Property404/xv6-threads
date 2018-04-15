@@ -1,6 +1,7 @@
 #ifndef _USER_H_
 #define _USER_H_
 #define PGSIZE		4096		// bytes mapped by a page
+#include "types.h"
 
 struct stat;
 
@@ -42,6 +43,16 @@ void* memset(void*, int, uint);
 void* malloc(uint);
 void free(void*);
 int atoi(const char*);
+
+// Thread library
+typedef struct __lock_t{
+	unsigned int locked;
+} lock_t;
+int thread_join();
+int thread_create(void(*start_routine)(void*), void*arg);
+void lock_acquire(lock_t *);
+void lock_release();
+void lock_init(lock_t* lk);
 
 #endif // _USER_H_
 
